@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ガラポン抽選</title>
+  <style>
+    :root {
+      --bg1: #fff7d6;
+      --bg2: #ffe5f1;
+      --card: rgba(255, 255, 255, 0.9);
+      --main: #ff7eb6;
+      --accent: #7c5cff;
+      --accent2: #36cfc9;
+      --text: #41314d;
+      --shadow: 0 12px 28px rgba(124, 92, 255, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.9), transparent 30%),
+        radial-gradient(circle at top right, rgba(124,92,255,0.16), transparent 25%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+
+    body {
+      padding: 12px;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      height: calc(100vh - 24px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.22fr 0.78fr;
+      gap: 12px;
+    }
+
+    .panel {
+      background: var(--card);
+      backdrop-filter: blur(8px);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 2px solid rgba(255,255,255,0.72);
+      position: relative;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: auto -45px -45px auto;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(124,92,255,0.12), transparent 70%);
+      pointer-events: none;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: clamp(24px, 2.2vw, 36px);
+      line-height: 1.1;
+    }
+
+    .sub {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.86;
+      line-height: 1.45;
+    }
+
+    .left-panel {
+      display: grid;
+      grid-template-rows: auto 1fr auto auto auto;
+      gap: 8px;
+    }
+
+    .garapon-area {
+      display: grid;
+      place-items: center;
+      min-height: 0;
+    }
+
+    .machine {
+      position: relative;
+      width: min(500px, 100%);
+      aspect-ratio: 1 / 1;
+      display: grid;
+      place-items: center;
+    }
+
+    .ring {
+      width: 80%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 30%, #ffffff 0 8%, #ffeec7 9% 18%, #ffca72 20% 55%, #f39c38 66% 100%);
+      border: 14px solid #fff;
+      box-shadow:
+        inset 0 0 0 12px rgba(255,255,255,0.4),
+        inset 0 0 32px rgba(255,255,255,0.55),
+        0 22px 44px rgba(243,156,56,0.3);
+      position: relative;
+    }
+
+    .ring.spinning {
+      animation: spinWheel 0.18s linear infinite;
+    }
+
+    @keyframes spinWheel {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .ring::before,
+    .ring::after {
+      content: "";
+      position: absolute;
+      inset: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+    }
+
+    .ring::before {
+      width: 32%;
+      aspect-ratio: 1 / 1;
+      background: radial-gradient(circle, #fff 0, #ffe6f5 65%, #ffc1dd 100%);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+
+    .ring::after {
+      width: 13%;
+      aspect-ratio: 1 / 1;
+      background: linear-gradient(135deg, var(--accent), var(--main));
+      box-shadow: inset 0 2px 8px rgba(255,255,255,0.4);
+    }
+
+    .handle {
+      position: absolute;
+      right: 8%;
+      top: 26%;
+      width: 22%;
+      height: 18px;
+      background: linear-gradient(90deg, #5c4b70, #866daa);
+      border-radius: 999px;
+      transform-origin: left center;
+      transform: rotate(18deg);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.14);
+    }
+
+    .handle::after {
+      content: "";
+      position: absolute;
+      right: -18px;
+      top: 50%;
+      width: 38px;
+      height: 38px;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #ff7eb6, #ffb347);
+      border-radius: 50%;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.16);
+    }
+
+    .handle.spinning {
+      animation: crank 0.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes crank {
+      from { transform: rotate(10deg); }
+      to { transform: rotate(40deg); }
+    }
+
+    .base {
+      position: absolute;
+      bottom: 6%;
+      width: 70%;
+      height: 22%;
+      border-radius: 26px;
+      background: linear-gradient(180deg, #9d8cff, #6f5ef7);
+      box-shadow: 0 20px 36px rgba(111,94,247,0.28);
+    }
+
+    .base::before {
+      content: "";
+      position: absolute;
+      top: -10px;
+      left: 12%;
+      right: 12%;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .name-display {
+      text-align: center;
+      min-height: 130px;
+      display: grid;
+      place-items: center;
+      padding: 16px 18px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,241,248,0.9));
+      border: 4px dashed rgba(255,126,182,0.5);
+      overflow: hidden;
+    }
+
+    .name-label {
+      font-size: 12px;
+      opacity: 0.75;
+      letter-spacing: 0.08em;
+    }
+
+    .result-name {
+      font-size: clamp(32px, 3.6vw, 60px);
+      font-weight: 900;
+      line-height: 1.2;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .result-name.bounce {
+      animation: popBounce 0.8s ease;
+    }
+
+    @keyframes popBounce {
+      0% { transform: scale(0.4) rotate(-6deg); opacity: 0; }
+      50% { transform: scale(1.15) rotate(2deg); opacity: 1; }
+      70% { transform: scale(0.95) rotate(-1deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 11px 17px;
+      font-size: 14px;
+      font-weight: 700;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .draw-btn {
+      background: linear-gradient(135deg, var(--main), #ffb347);
+      color: white;
+    }
+
+    .reset-btn {
+      background: linear-gradient(135deg, var(--accent), #58a6ff);
+      color: white;
+    }
+
+    .small-btn {
+      background: #fff;
+      color: var(--text);
+    }
+
+    .status {
+      text-align: center;
+      font-weight: 700;
+      min-height: 1.3em;
+      font-size: 13px;
+    }
+
+    .right-panel {
+      display: grid;
+      grid-template-rows: auto auto 120px auto 1fr;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .section-title {
+      font-size: 19px;
+      margin: 0;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.86;
+      line-height: 1.55;
+    }
+
+    .textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      resize: none;
+      border-radius: 18px;
+      padding: 12px;
+      border: 2px solid rgba(124,92,255,0.18);
+      font-size: 13px;
+      line-height: 1.5;
+      background: rgba(255,255,255,0.85);
+      color: var(--text);
+      outline: none;
+    }
+
+    .textarea:focus {
+      border-color: rgba(255,126,182,0.55);
+      box-shadow: 0 0 0 4px rgba(255,126,182,0.12);
+    }
+
+    .count-boxes {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .count-box {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.76);
+      border: 2px solid rgba(124,92,255,0.12);
+    }
+
+    .count-label {
+      font-size: 12px;
+      opacity: 0.75;
+      margin-bottom: 4px;
+    }
+
+    .count-value {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .history {
+      background: rgba(255,255,255,0.72);
+      border-radius: 18px;
+      padding: 14px;
+      min-height: 0;
+      height: 100%;
+      border: 2px solid rgba(124,92,255,0.1);
+      overflow: auto;
+    }
+
+    .history strong {
+      font-size: 15px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 8px;
+      margin-top: 10px;
+      min-height: calc(100% - 28px);
+    }
+
+    .tag {
+      background: linear-gradient(135deg, rgba(255,126,182,0.16), rgba(124,92,255,0.14));
+      border: 1px solid rgba(124,92,255,0.15);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .confetti-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 50;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 16px;
+      opacity: 0.95;
+      animation: fall linear forwards;
+      border-radius: 3px;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(-10vh) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0.2;
+      }
+    }
+
+    @media (max-width: 900px) {
+      html, body {
+        height: auto;
+        overflow: auto;
+      }
+
+      body {
+        padding: 12px;
+      }
+
+      .app {
+        height: auto;
+        grid-template-columns: 1fr;
+      }
+
+      .right-panel {
+        grid-template-rows: auto auto 180px auto minmax(220px, 1fr);
+      }
+
+      .textarea {
+        min-height: 180px;
+        resize: vertical;
+      }
+
+      .history {
+        min-height: 220px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="confetti-layer" id="confettiLayer"></div>
+
+  <div class="app">
+    <section class="panel left-panel">
+      <div>
+        <h1>🎉 ガラポン抽選 🎉</h1>
+        <p class="sub">一度当たった名前は自動で除外。PCで1ページに収まりやすいコンパクト表示に調整しています。</p>
+      </div>
+
+      <div class="garapon-area">
+        <div class="machine">
+          <div class="ring" id="ring"></div>
+          <div class="handle" id="handle"></div>
+          <div class="base"></div>
+        </div>
+      </div>
+
+      <div class="name-display">
+        <div>
+          <div class="name-label">当選者</div>
+          <div class="result-name" id="resultName">まだ抽選していません</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="draw-btn" id="drawBtn">ガラポンを回す！</button>
+        <button class="reset-btn" id="resetBtn">抽選をリセット</button>
+        <button class="small-btn" id="loadBtn">入力した名前を反映</button>
+      </div>
+
+      <div class="status" id="status">参加者リストを入力して「入力した名前を反映」を押してください。</div>
+    </section>
+
+    <aside class="panel right-panel">
+      <h2 class="section-title">名前リスト入力</h2>
+      <p class="hint">
+        1行に1人ずつ入力してください。重複した名前は自動で1つにまとめます。
+      </p>
+
+      <!--
+        ===== 名前の入力場所はここです =====
+        この textarea の初期値を書き換えると、最初から名前を入れておけます。
+        1行に1人ずつ入力してください。
+        例:
+        田中
+        佐藤
+        鈴木
+      -->
+      <textarea id="nameInput" class="textarea" placeholder="ここに名前を1行ずつ入力してください&#10;例：&#10;田中&#10;佐藤&#10;鈴木">田中
+佐藤
+鈴木
+高橋
+伊藤</textarea>
+
+      <div class="count-boxes">
+        <div class="count-box">
+          <div class="count-label">抽選対象</div>
+          <div class="count-value" id="remainingCount">0</div>
+        </div>
+        <div class="count-box">
+          <div class="count-label">抽選済み</div>
+          <div class="count-value" id="drawnCount">0</div>
+        </div>
+      </div>
+
+      <div class="history">
+        <strong>抽選結果の履歴</strong>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const nameInput = document.getElementById("nameInput");
+    const drawBtn = document.getElementById("drawBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const loadBtn = document.getElementById("loadBtn");
+    const resultName = document.getElementById("resultName");
+    const statusEl = document.getElementById("status");
+    const remainingCount = document.getElementById("remainingCount");
+    const drawnCount = document.getElementById("drawnCount");
+    const historyList = document.getElementById("historyList");
+    const ring = document.getElementById("ring");
+    const handle = document.getElementById("handle");
+    const confettiLayer = document.getElementById("confettiLayer");
+
+    let allNames = [];
+    let remainingNames = [];
+    let drawnNames = [];
+    let isDrawing = false;
+
+    function uniqueCleanNames(text) {
+      const list = text
+        .split(/\r?\n/)
+        .map(name => name.trim())
+        .filter(Boolean);
+
+      return [...new Set(list)];
+    }
+
+    function refreshCounts() {
+      remainingCount.textContent = remainingNames.length;
+      drawnCount.textContent = drawnNames.length;
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = "";
+
+      if (drawnNames.length === 0) {
+        historyList.innerHTML = '<span style="opacity:.7;">まだ誰も当選していません</span>';
+        return;
+      }
+
+      drawnNames.forEach(name => {
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = name;
+        historyList.appendChild(tag);
+      });
+    }
+
+    function loadNames() {
+      allNames = uniqueCleanNames(nameInput.value);
+      remainingNames = [...allNames];
+      drawnNames = [];
+      resultName.textContent = allNames.length ? "準備OK！" : "名前を入力してください";
+      statusEl.textContent = allNames.length
+        ? `${allNames.length}人を抽選対象にセットしました。`
+        : "名前が未入力です。1行に1人ずつ入力してください。";
+      renderHistory();
+      refreshCounts();
+    }
+
+    function randomPickIndex(max) {
+      return Math.floor(Math.random() * max);
+    }
+
+    function launchConfetti() {
+      const colors = ["#ff7eb6", "#7c5cff", "#36cfc9", "#ffb347", "#ffd93d", "#ffffff"];
+      const pieces = 55;
+
+      for (let i = 0; i < pieces; i++) {
+        const piece = document.createElement("div");
+        piece.className = "confetti";
+        piece.style.left = Math.random() * 100 + "vw";
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDuration = (2 + Math.random() * 1.6) + "s";
+        piece.style.animationDelay = (Math.random() * 0.25) + "s";
+        piece.style.transform = `translateY(-10vh) rotate(${Math.random() * 360}deg)`;
+        confettiLayer.appendChild(piece);
+
+        setTimeout(() => piece.remove(), 4000);
+      }
+    }
+
+    function animateResult(name) {
+      resultName.classList.remove("bounce");
+      void resultName.offsetWidth;
+      resultName.textContent = name;
+      resultName.classList.add("bounce");
+    }
+
+    function setMachineSpinning(spinning) {
+      ring.classList.toggle("spinning", spinning);
+      handle.classList.toggle("spinning", spinning);
+    }
+
+    function startDraw() {
+      if (isDrawing) return;
+
+      if (remainingNames.length === 0) {
+        if (allNames.length === 0) {
+          statusEl.textContent = "先に名前を入力して反映してください。";
+          resultName.textContent = "名前未設定";
+        } else {
+          statusEl.textContent = "抽選できる名前がありません。リセットしてください。";
+          resultName.textContent = "全員抽選済み！";
+        }
+        return;
+      }
+
+      isDrawing = true;
+      drawBtn.disabled = true;
+      loadBtn.disabled = true;
+      resetBtn.disabled = true;
+      setMachineSpinning(true);
+      statusEl.textContent = "抽選中... ガラガラガラ！";
+
+      const rollingNames = [...remainingNames];
+      const rollTimer = setInterval(() => {
+        const preview = rollingNames[randomPickIndex(rollingNames.length)];
+        resultName.textContent = preview;
+      }, 80);
+
+      setTimeout(() => {
+        clearInterval(rollTimer);
+
+        const pickedIndex = randomPickIndex(remainingNames.length);
+        const pickedName = remainingNames[pickedIndex];
+
+        remainingNames.splice(pickedIndex, 1);
+        drawnNames.push(pickedName);
+
+        setMachineSpinning(false);
+        animateResult(`🎊 ${pickedName} 🎊`);
+        statusEl.textContent = `${pickedName} さんが当選しました！`;
+        refreshCounts();
+        renderHistory();
+        launchConfetti();
+
+        drawBtn.disabled = false;
+        loadBtn.disabled = false;
+        resetBtn.disabled = false;
+        isDrawing = false;
+
+        if (remainingNames.length === 0) {
+          statusEl.textContent += " これで全員の抽選が完了です。";
+        }
+      }, 2200);
+    }
+
+    drawBtn.addEventListener("click", startDraw);
+    resetBtn.addEventListener("click", loadNames);
+    loadBtn.addEventListener("click", loadNames);
+
+    loadNames();
+  </script>
+</body>
+</html>
